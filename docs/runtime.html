@@ -427,8 +427,315 @@
     const logoutBtn = document.getElementById('logoutBtn');
     const appNameEl = document.getElementById('appName');
     const appSubtitleEl = document.getElementById('appSubtitle');
+    const isGitHubPages = window.location.hostname.endsWith('github.io');
+    const staticDemoMode = isGitHubPages;
+
+    const staticRuntime = {
+      config: {
+        appName: 'Atlas Ops Runtime',
+        defaultLocale: 'en',
+        locales: ['en', 'es'],
+        translations: {
+          en: {
+            loading: 'Loading runtime...',
+            error: 'Something went wrong',
+            email: 'Email',
+            password: 'Password',
+            signIn: 'Sign in',
+            dashboard: 'Dashboard',
+            ownerScoped: 'User-scoped data',
+            records: 'Records',
+            update: 'Update',
+            create: 'Create',
+            csvImport: 'CSV Import',
+            import: 'Import',
+            cancel: 'Cancel',
+            contacts: 'Contacts',
+            tasks: 'Tasks',
+            notifications: 'Notifications'
+          },
+          es: {
+            loading: 'Cargando runtime...',
+            error: 'Algo salio mal',
+            email: 'Correo',
+            password: 'Contrasena',
+            signIn: 'Iniciar sesion',
+            dashboard: 'Panel',
+            ownerScoped: 'Datos por usuario',
+            records: 'Registros',
+            update: 'Actualizar',
+            create: 'Crear',
+            csvImport: 'Importar CSV',
+            import: 'Importar',
+            cancel: 'Cancelar',
+            contacts: 'Contactos',
+            tasks: 'Tareas',
+            notifications: 'Notificaciones'
+          }
+        },
+        navigation: [
+          { id: 'dashboard', labelKey: 'dashboard', view: 'dashboard' },
+          { id: 'contacts', labelKey: 'contacts', view: 'entity', entityId: 'contacts' },
+          { id: 'tasks', labelKey: 'tasks', view: 'entity', entityId: 'tasks' },
+          { id: 'import', labelKey: 'csvImport', view: 'import', entityId: 'contacts' },
+          { id: 'notifications', labelKey: 'notifications', view: 'notifications' }
+        ],
+        entities: [
+          {
+            id: 'contacts',
+            labelKey: 'contacts',
+            scoped: true,
+            allowCsvImport: true,
+            fields: [
+              { name: 'name', labelKey: 'name', type: 'string', component: 'text', required: true },
+              { name: 'email', labelKey: 'email', type: 'string', component: 'email', required: true },
+              { name: 'status', labelKey: 'status', type: 'string', component: 'select', options: ['lead', 'active', 'inactive'], required: true },
+              { name: 'notes', labelKey: 'notes', type: 'string', component: 'textarea', required: false }
+            ]
+          },
+          {
+            id: 'tasks',
+            labelKey: 'tasks',
+            scoped: true,
+            allowCsvImport: false,
+            fields: [
+              { name: 'title', labelKey: 'title', type: 'string', component: 'text', required: true },
+              { name: 'status', labelKey: 'status', type: 'string', component: 'select', options: ['todo', 'doing', 'done'], required: true },
+              { name: 'dueDate', labelKey: 'dueDate', type: 'string', component: 'date', required: false }
+            ]
+          }
+        ],
+        auth: {
+          users: [
+            { id: 'u_admin', email: 'admin@atlas.local', password: 'password123', name: 'Atlas Admin', role: 'admin' },
+            { id: 'u_member', email: 'member@atlas.local', password: 'password123', name: 'Atlas Member', role: 'member' }
+          ]
+        }
+      },
+      session: null,
+      records: {
+        contacts: [
+          { id: 'contacts_1', name: 'Ava Stone', email: 'ava@example.com', status: 'active', notes: 'Imported lead', ownerId: 'u_admin' },
+          { id: 'contacts_2', name: 'Noah Reed', email: 'noah@example.com', status: 'lead', notes: 'Follow up this week', ownerId: 'u_member' }
+        ],
+        tasks: [
+          { id: 'tasks_1', title: 'Prepare Q2 outreach list', status: 'doing', dueDate: '', ownerId: 'u_admin' }
+        ]
+      },
+      nextIds: { contacts: 3, tasks: 2 },
+      notifications: []
+    };
+
+    function clone(value) {
+      return JSON.parse(JSON.stringify(value));
+    }
+
+    function parseBody(options) {
+      if (!options || options.body === undefined || options.body === null || options.body === '') {
+        return {};
+      }
+
+      if (typeof options.body === 'string') {
+        try {
+          return JSON.parse(options.body);
+        } catch (_error) {
+          return {};
+        }
+      }
+
+      if (typeof options.body === 'object') {
+        return options.body;
+      }
+
+      return {};
+    }
+
+    function staticUser() {
+      if (!staticRuntime.session) {
+        return null;
+      }
+
+      return {
+        id: staticRuntime.session.id,
+        email: staticRuntime.session.email,
+        name: staticRuntime.session.name,
+        role: staticRuntime.session.role
+      };
+    }
+
+    function requireStaticSession() {
+      const user = staticUser();
+      if (!user) {
+        throw new Error('Unauthorized');
+      }
+      return user;
+    }
+
+    function staticVisibleRecords(entityId, user) {
+      const rows = Array.isArray(staticRuntime.records[entityId]) ? staticRuntime.records[entityId] : [];
+      if (!user || user.role === 'admin') {
+        return rows;
+      }
+      return rows.filter((row) => row.ownerId === user.id);
+    }
+
+    function staticNotify({ userId, type, message, entityId, recordId }) {
+      staticRuntime.notifications.unshift({
+        id: `note_${Date.now()}_${Math.random().toString(16).slice(2, 6)}`,
+        userId,
+        type,
+        message,
+        entityId: entityId || null,
+        recordId: recordId || null,
+        createdAt: new Date().toISOString()
+      });
+      staticRuntime.notifications = staticRuntime.notifications.slice(0, 100);
+    }
+
+    function parseCsv(csvText) {
+      const lines = String(csvText || '').split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+      if (lines.length < 2) {
+        return [];
+      }
+
+      const headers = lines[0].split(',').map((item) => item.trim());
+      return lines.slice(1).map((line) => {
+        const cells = line.split(',').map((item) => item.trim());
+        const row = {};
+        headers.forEach((header, index) => {
+          row[header] = cells[index] || '';
+        });
+        return row;
+      });
+    }
+
+    function staticApiFetch(url, options = {}) {
+      const method = (options.method || 'GET').toUpperCase();
+      const pathOnly = String(url || '').split('?')[0];
+      const body = parseBody(options);
+      const user = staticUser();
+
+      if (pathOnly === '/api/runtime/config' && method === 'GET') {
+        const publicConfig = clone(staticRuntime.config);
+        if (publicConfig.auth?.users) {
+          publicConfig.auth.users = publicConfig.auth.users.map(({ password, ...rest }) => rest);
+        }
+        return Promise.resolve(publicConfig);
+      }
+
+      if (pathOnly === '/api/auth/session' && method === 'GET') {
+        return Promise.resolve({ user });
+      }
+
+      if (pathOnly === '/api/auth/login' && method === 'POST') {
+        const found = staticRuntime.config.auth.users.find((candidate) => candidate.email === body.email && candidate.password === body.password);
+        if (!found) {
+          throw new Error('Invalid email or password');
+        }
+        staticRuntime.session = { id: found.id, email: found.email, name: found.name, role: found.role };
+        return Promise.resolve({ user: staticUser() });
+      }
+
+      if (pathOnly === '/api/auth/logout' && method === 'POST') {
+        staticRuntime.session = null;
+        return Promise.resolve({ success: true });
+      }
+
+      if (pathOnly === '/api/notifications' && method === 'GET') {
+        const currentUser = requireStaticSession();
+        const rows = currentUser.role === 'admin'
+          ? staticRuntime.notifications
+          : staticRuntime.notifications.filter((item) => !item.userId || item.userId === currentUser.id);
+        return Promise.resolve({ notifications: clone(rows) });
+      }
+
+      if (pathOnly.startsWith('/api/data/')) {
+        const currentUser = requireStaticSession();
+        const parts = pathOnly.split('/').filter(Boolean);
+        const entityId = parts[2];
+        const recordId = parts[3];
+
+        if (!staticRuntime.records[entityId]) {
+          staticRuntime.records[entityId] = [];
+          staticRuntime.nextIds[entityId] = 1;
+        }
+
+        if (method === 'GET' && !recordId) {
+          return Promise.resolve({ records: clone(staticVisibleRecords(entityId, currentUser)) });
+        }
+
+        if (method === 'POST' && !recordId) {
+          const created = { ...body };
+          created.id = `${entityId}_${staticRuntime.nextIds[entityId] || 1}`;
+          staticRuntime.nextIds[entityId] = (staticRuntime.nextIds[entityId] || 1) + 1;
+          created.ownerId = currentUser.id;
+          staticRuntime.records[entityId].push(created);
+          staticNotify({ userId: currentUser.id, type: 'create', message: `Created ${entityId} ${created.id}`, entityId, recordId: created.id });
+          return Promise.resolve({ record: clone(created) });
+        }
+
+        if (method === 'PATCH' && recordId) {
+          const index = staticRuntime.records[entityId].findIndex((item) => item.id === recordId);
+          if (index === -1) {
+            throw new Error('Record not found');
+          }
+          const current = staticRuntime.records[entityId][index];
+          if (currentUser.role !== 'admin' && current.ownerId !== currentUser.id) {
+            throw new Error('Forbidden');
+          }
+          staticRuntime.records[entityId][index] = { ...current, ...body };
+          staticNotify({ userId: currentUser.id, type: 'update', message: `Updated ${entityId} ${recordId}`, entityId, recordId });
+          return Promise.resolve({ record: clone(staticRuntime.records[entityId][index]) });
+        }
+
+        if (method === 'DELETE' && recordId) {
+          const index = staticRuntime.records[entityId].findIndex((item) => item.id === recordId);
+          if (index === -1) {
+            throw new Error('Record not found');
+          }
+          const current = staticRuntime.records[entityId][index];
+          if (currentUser.role !== 'admin' && current.ownerId !== currentUser.id) {
+            throw new Error('Forbidden');
+          }
+          staticRuntime.records[entityId].splice(index, 1);
+          staticNotify({ userId: currentUser.id, type: 'delete', message: `Deleted ${entityId} ${recordId}`, entityId, recordId });
+          return Promise.resolve({ success: true });
+        }
+      }
+
+      if (pathOnly.startsWith('/api/import/') && method === 'POST') {
+        const currentUser = requireStaticSession();
+        const entityId = pathOnly.split('/').filter(Boolean)[2];
+        if (!entityId) {
+          throw new Error('Entity required');
+        }
+
+        if (!staticRuntime.records[entityId]) {
+          staticRuntime.records[entityId] = [];
+          staticRuntime.nextIds[entityId] = 1;
+        }
+
+        const rows = parseCsv(body.csv);
+        let importedCount = 0;
+        for (const row of rows) {
+          const id = `${entityId}_${staticRuntime.nextIds[entityId] || 1}`;
+          staticRuntime.nextIds[entityId] = (staticRuntime.nextIds[entityId] || 1) + 1;
+          staticRuntime.records[entityId].push({ ...row, id, ownerId: currentUser.id });
+          importedCount += 1;
+        }
+
+        staticNotify({ userId: currentUser.id, type: 'import', message: `Imported ${importedCount} rows into ${entityId}`, entityId });
+        return Promise.resolve({ success: true, importedCount, errors: [] });
+      }
+
+      throw new Error(`Unsupported request in static mode: ${method} ${pathOnly}`);
+    }
 
     function apiFetch(url, options = {}) {
+      if (staticDemoMode) {
+        return staticApiFetch(url, options);
+      }
+
       return fetch(url, {
         credentials: 'same-origin',
         headers: {
@@ -1048,6 +1355,9 @@
         state.loading = true;
         render();
         state.config = await apiFetch('/api/runtime/config');
+        if (staticDemoMode) {
+          setBanner('Running in static demo mode (GitHub Pages). Data is local to this session.', false);
+        }
         localeSelect.innerHTML = (state.config.locales || ['en']).map((locale) => `<option value="${locale}">${locale.toUpperCase()}</option>`).join('');
         state.locale = state.config.defaultLocale || 'en';
         const sessionData = await apiFetch('/api/auth/session');
