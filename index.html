@@ -535,6 +535,71 @@
 
     let stageTimer = null;
 
+    function buildOfflineSpec(prompt, reason) {
+      const cleanPrompt = (prompt || 'Build an app').trim();
+      const lowerPrompt = cleanPrompt.toLowerCase();
+      const features = [];
+
+      if (lowerPrompt.includes('crm') || lowerPrompt.includes('contact')) features.push('Contacts management');
+      if (lowerPrompt.includes('dashboard')) features.push('Admin dashboard');
+      if (lowerPrompt.includes('payment')) features.push('Payments and billing');
+      if (lowerPrompt.includes('booking') || lowerPrompt.includes('schedule')) features.push('Booking workflows');
+      if (lowerPrompt.includes('inventory') || lowerPrompt.includes('stock')) features.push('Inventory tracking');
+      if (lowerPrompt.includes('learning') || lowerPrompt.includes('course')) features.push('Learning content');
+
+      if (!features.length) {
+        features.push('Core CRUD workflows', 'Authentication', 'Notifications');
+      }
+
+      return {
+        success: true,
+        mode: 'offline-mock',
+        warning: reason || 'Backend unavailable, generated locally.',
+        latencyMs: 0,
+        prompt: cleanPrompt,
+        generatedAt: new Date().toISOString(),
+        intent: {
+          summary: `Offline mock output for: ${cleanPrompt}`,
+          primaryUseCase: cleanPrompt
+        },
+        architecture: {
+          runtime: 'static-demo',
+          notes: ['GitHub Pages cannot host the backend API directly.', 'This mock keeps the live site usable when the API is unreachable.']
+        },
+        schema: {
+          entities: [
+            { id: 'items', fields: ['id', 'name', 'status'] }
+          ]
+        },
+        features,
+        notes: ['Use the local backend for full generation.', 'Deploy the API to a separate host for production use.']
+      };
+    }
+
+    async function fetchJson(url, options = {}) {
+      const response = await fetch(url, options);
+      const text = await response.text();
+      const contentType = response.headers.get('content-type') || '';
+      let data = {};
+
+      if (contentType.includes('application/json') || text.trim().startsWith('{') || text.trim().startsWith('[')) {
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch (error) {
+          throw new Error(`Invalid JSON response from ${url}: ${error.message}`);
+        }
+      } else {
+        throw new Error(`Expected JSON from ${url} but received ${contentType || 'text/html'}`);
+      }
+
+      if (!response.ok) {
+        const message = data.error || data.details || `Request failed (${response.status})`;
+        throw new Error(Array.isArray(message) ? message.join(', ') : message);
+      }
+
+      return data;
+    }
+
     function startStatusAnimation() {
       let index = 0;
       statusEl.textContent = stagedMessages[index];
@@ -581,7 +646,7 @@
       startStatusAnimation();
 
       try {
-        const response = await fetch(`${apiBaseUrl}/generate`, {
+        const data = await fetchJson(`${apiBaseUrl}/generate`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -589,10 +654,9 @@
           body: JSON.stringify({ prompt })
         });
 
-        const data = await response.json();
         outputEl.textContent = JSON.stringify(data, null, 2);
 
-        if (!response.ok || data.success === false) {
+        if (data.success === false) {
           const message = data.error || data.details || 'Generation failed.';
           statusEl.textContent = message;
           errorEl.textContent = message;
@@ -606,11 +670,13 @@
         stateEl.textContent = 'Ready';
       } catch (error) {
         const message = error.message || 'Request failed.';
-        statusEl.textContent = message;
+        const fallback = buildOfflineSpec(prompt, message);
+        statusEl.textContent = 'Backend unavailable, using offline mock.';
         errorEl.textContent = message;
-        errorEl.classList.add('error');
-        stateEl.textContent = 'Error';
-        outputEl.textContent = JSON.stringify({ success: false, error: message }, null, 2);
+        errorEl.classList.remove('error');
+        stateEl.textContent = 'Offline demo';
+        latencyEl.textContent = '0 ms';
+        outputEl.textContent = JSON.stringify(fallback, null, 2);
       } finally {
         stopStatusAnimation();
         generateBtn.disabled = false;
