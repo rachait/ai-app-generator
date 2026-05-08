@@ -512,9 +512,13 @@
   </main>
 
   <script>
-    const apiBaseUrl = window.location.protocol === 'file:'
-      ? 'http://localhost:3000'
-      : window.location.origin;
+    const defaultApiBaseUrl = 'https://ai-app-generator-0wrr.onrender.com';
+    const explicitApiBaseUrl = new URLSearchParams(window.location.search).get('api');
+    const storedApiBaseUrl = window.localStorage.getItem('ai-app-generator-api-base-url');
+    const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const apiBaseUrl = explicitApiBaseUrl
+      || storedApiBaseUrl
+      || (window.location.protocol === 'file:' || isLocalHost ? 'http://localhost:3000' : defaultApiBaseUrl);
 
     const promptEl = document.getElementById('prompt');
     const generateBtn = document.getElementById('generateBtn');
