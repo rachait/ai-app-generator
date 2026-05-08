@@ -452,7 +452,13 @@
             cancel: 'Cancel',
             contacts: 'Contacts',
             tasks: 'Tasks',
-            notifications: 'Notifications'
+            notifications: 'Notifications',
+            activity: 'Activity',
+            name: 'Name',
+            status: 'Status',
+            notes: 'Notes',
+            title: 'Title',
+            dueDate: 'Due Date'
           },
           es: {
             loading: 'Cargando runtime...',
@@ -470,7 +476,13 @@
             cancel: 'Cancelar',
             contacts: 'Contactos',
             tasks: 'Tareas',
-            notifications: 'Notificaciones'
+            notifications: 'Notificaciones',
+            activity: 'Actividad',
+            name: 'Nombre',
+            status: 'Estado',
+            notes: 'Notas',
+            title: 'Titulo',
+            dueDate: 'Fecha Vencimiento'
           }
         },
         navigation: [
@@ -480,6 +492,13 @@
           { id: 'import', labelKey: 'csvImport', view: 'import', entityId: 'contacts' },
           { id: 'notifications', labelKey: 'notifications', view: 'notifications' }
         ],
+        dashboard: {
+          widgets: [
+            { type: 'metric', entityId: 'contacts', labelKey: 'contacts' },
+            { type: 'metric', entityId: 'tasks', labelKey: 'tasks' },
+            { type: 'activity', labelKey: 'activity' }
+          ]
+        },
         entities: [
           {
             id: 'contacts',
