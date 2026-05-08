@@ -1,15 +1,622 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>AI App Generator</title>
-    <meta http-equiv="refresh" content="0; url=../public/index.html">
-    <script>
-      window.location.replace('../public/index.html');
-    </script>
-  </head>
-  <body>
-    Redirecting to <a href="../public/index.html">AI App Generator</a>...
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI App Generator</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #050814;
+      --bg-alt: #0a1020;
+      --panel: rgba(9, 14, 27, 0.76);
+      --panel-strong: rgba(10, 16, 32, 0.92);
+      --panel-border: rgba(168, 183, 214, 0.16);
+      --text: #edf3ff;
+      --muted: #9cabc7;
+      --muted-strong: #bfd0ee;
+      --accent: #7bd8ff;
+      --accent-strong: #b6f1ff;
+      --accent-2: #9f8cff;
+      --accent-3: #76f0c2;
+      --danger: #ff8080;
+      --success: #86efac;
+      --shadow: 0 28px 90px rgba(0, 0, 0, 0.42);
+      --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.22);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Trebuchet MS", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 10%, rgba(123, 216, 255, 0.20), transparent 26%),
+        radial-gradient(circle at 82% 14%, rgba(159, 140, 255, 0.16), transparent 22%),
+        radial-gradient(circle at 78% 82%, rgba(118, 240, 194, 0.12), transparent 26%),
+        linear-gradient(180deg, var(--bg-alt) 0%, var(--bg) 52%, #04060d 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mask-image: radial-gradient(circle at center, black 35%, transparent 100%);
+      opacity: 0.42;
+    }
+
+    .shell {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 56px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero {
+      display: grid;
+      gap: 16px;
+      margin-bottom: 22px;
+      grid-template-columns: 1.3fr 0.7fr;
+      align-items: end;
+    }
+
+    .hero-copy {
+      display: grid;
+      gap: 14px;
+    }
+
+    .eyebrow {
+      color: var(--accent-strong);
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .eyebrow::before {
+      content: '';
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 0 6px rgba(123, 216, 255, 0.08);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2.4rem, 4.8vw, 4.6rem);
+      line-height: 0.98;
+      letter-spacing: -0.06em;
+      max-width: 12ch;
+    }
+
+    .subtitle {
+      margin: 0;
+      max-width: 66ch;
+      color: var(--muted);
+      font-size: 1.02rem;
+      line-height: 1.7;
+    }
+
+    .hero-panel {
+      padding: 18px;
+      border-radius: 22px;
+      background: linear-gradient(180deg, rgba(123, 216, 255, 0.08), rgba(159, 140, 255, 0.04));
+      border: 1px solid rgba(168, 183, 214, 0.14);
+      box-shadow: var(--shadow-soft);
+      display: grid;
+      gap: 12px;
+    }
+
+    .hero-panel h2 {
+      margin: 0;
+      font-size: 0.92rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--muted-strong);
+    }
+
+    .signal-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .signal {
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(168, 183, 214, 0.12);
+    }
+
+    .signal strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--accent-strong);
+      font-size: 0.88rem;
+    }
+
+    .signal span {
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 0.94rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .card-body {
+      padding: 20px;
+    }
+
+    .card-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .card-title h3 {
+      margin: 0;
+      font-size: 1rem;
+      letter-spacing: 0.03em;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .chip {
+      border: 1px solid rgba(168, 183, 214, 0.14);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--muted-strong);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 0.84rem;
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .chip:hover {
+      transform: translateY(-1px);
+      border-color: rgba(123, 216, 255, 0.35);
+      background: rgba(123, 216, 255, 0.08);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      color: var(--muted);
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 260px;
+      resize: vertical;
+      border: 1px solid rgba(168, 183, 214, 0.18);
+      border-radius: 16px;
+      background:
+        linear-gradient(180deg, rgba(6, 10, 19, 0.92), rgba(4, 7, 14, 0.94));
+      color: var(--text);
+      padding: 16px;
+      font: inherit;
+      line-height: 1.6;
+      outline: none;
+      transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    textarea:focus {
+      border-color: rgba(123, 216, 255, 0.62);
+      box-shadow: 0 0 0 4px rgba(123, 216, 255, 0.12);
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+      align-items: center;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #7bd8ff 0%, #b6f1ff 42%, #9f8cff 100%);
+      color: #07111f;
+      padding: 12px 20px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.18s ease, opacity 0.18s ease, box-shadow 0.18s ease;
+      box-shadow: 0 12px 26px rgba(123, 216, 255, 0.24);
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .status {
+      color: var(--muted);
+      font-size: 0.95rem;
+      min-height: 1.4em;
+    }
+
+    .status::before {
+      content: '●';
+      color: var(--success);
+      margin-right: 8px;
+    }
+
+    .meta {
+      display: grid;
+      gap: 12px;
+    }
+
+    .metric {
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(168, 183, 214, 0.12);
+    }
+
+    .metric .label {
+      display: block;
+      color: var(--muted);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 6px;
+    }
+
+    .metric .value {
+      font-size: 1rem;
+      line-height: 1.5;
+      word-break: break-word;
+      color: var(--text);
+    }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .mini-stat {
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+      border: 1px solid rgba(168, 183, 214, 0.12);
+    }
+
+    .mini-stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.78rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .mini-stat strong {
+      font-size: 1.02rem;
+      color: var(--accent-strong);
+    }
+
+    .ideas {
+      display: grid;
+      gap: 10px;
+    }
+
+    .idea {
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(168, 183, 214, 0.1);
+    }
+
+    .idea strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--accent-strong);
+    }
+
+    .idea span {
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 0.92rem;
+    }
+
+    .output {
+      min-height: 420px;
+      max-height: 720px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: linear-gradient(180deg, rgba(4, 8, 16, 0.94), rgba(3, 5, 11, 0.98));
+      color: #d7e6ff;
+      border-radius: 16px;
+      border: 1px solid rgba(168, 183, 214, 0.16);
+      padding: 18px;
+      margin: 0;
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+
+    .error {
+      color: var(--danger);
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.5;
+      margin-top: 10px;
+    }
+
+    .footer-note {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 920px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .mini-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .shell {
+        width: min(100% - 20px, 1120px);
+        padding-top: 22px;
+      }
+
+      h1 {
+        max-width: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow">AI App Generator</div>
+        <h1>Turn raw ideas into a polished product blueprint.</h1>
+        <p class="subtitle">Describe the app you want to build and the generator will run a four-stage pipeline to produce intent, architecture, schemas, and a refined final configuration. The interface now feels more like a control room than a demo.</p>
+      </div>
+
+      <aside class="hero-panel">
+        <h2>What makes it unique</h2>
+        <div class="signal-grid">
+          <div class="signal">
+            <strong>Product signature</strong>
+            <span>Distinct visual language, prompt presets, and compact status cues make the app feel intentionally designed.</span>
+          </div>
+          <div class="signal">
+            <strong>Decision support</strong>
+            <span>A built-in ideas board suggests the next features you can add without changing the backend flow.</span>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <div class="card-body">
+          <div class="card-title">
+            <h3>Prompt studio</h3>
+            <span class="eyebrow" style="letter-spacing: 0.14em; font-size: 11px;">Fast start</span>
+          </div>
+          <div class="chip-row" aria-label="Prompt presets">
+            <button class="chip" type="button" data-prompt="Build a CRM with login, contacts, dashboard, analytics, and premium payments">CRM</button>
+            <button class="chip" type="button" data-prompt="Build a warehouse app with inventory tracking, supplier management, stock alerts, and audit logs">Inventory</button>
+            <button class="chip" type="button" data-prompt="Build a booking app for salons with schedules, payments, reminders, and admin tools">Bookings</button>
+            <button class="chip" type="button" data-prompt="Build a learning platform with courses, quizzes, certificates, and teacher dashboards">Learning</button>
+          </div>
+          <label for="prompt">App description</label>
+          <textarea id="prompt" placeholder="Build a CRM with login, contacts, dashboard, role-based access, and premium payments"></textarea>
+          <div class="controls">
+            <button id="generateBtn">Generate</button>
+            <button id="copyPromptBtn" type="button" style="background: rgba(255,255,255,0.06); color: var(--text); box-shadow: none; border: 1px solid rgba(168,183,214,0.16);">Copy prompt</button>
+            <a href="/app" class="chip" style="text-decoration:none; display:inline-flex; align-items:center;">Open runtime</a>
+            <div id="status" class="status">Idle.</div>
+          </div>
+          <div class="hint">Tip: add a domain, a user role, and one monetization or workflow detail for sharper output.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body meta">
+          <div class="card-title">
+            <h3>Live signal</h3>
+            <span class="eyebrow" style="letter-spacing: 0.14em; font-size: 11px;">Response</span>
+          </div>
+          <div class="mini-grid">
+            <div class="mini-stat">
+              <span>Latency</span>
+              <strong id="latency">--</strong>
+            </div>
+            <div class="mini-stat">
+              <span>State</span>
+              <strong id="state">Idle</strong>
+            </div>
+          </div>
+          <div class="metric">
+            <span class="label">Error</span>
+            <div id="error" class="value">None</div>
+          </div>
+          <div class="metric">
+            <span class="label">Ideas to add more</span>
+            <div class="ideas">
+              <div class="idea"><strong>Export buttons</strong><span>Add JSON/Markdown exports so generated specs can move into docs or tickets instantly.</span></div>
+              <div class="idea"><strong>Prompt history</strong><span>Store recent prompts locally so users can compare versions and reuse strong requests.</span></div>
+              <div class="idea"><strong>Schema preview</strong><span>Split final output into tabs for intent, design, schemas, and validation notes.</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="margin-top: 18px;">
+      <div class="card-title" style="margin-bottom: 12px;">
+        <h3>Generation output</h3>
+        <span class="eyebrow" style="letter-spacing: 0.14em; font-size: 11px;">Structured JSON</span>
+      </div>
+      <pre id="output" class="output">{}</pre>
+      <p class="footer-note">Next additions that fit this app well: a prompt library, diff view between runs, downloadable artifacts, and an inline metrics chart for latency and repair counts.</p>
+    </section>
+  </main>
+
+  <script>
+    const apiBaseUrl = window.location.protocol === 'file:'
+      ? 'http://localhost:3000'
+      : window.location.origin;
+
+    const promptEl = document.getElementById('prompt');
+    const generateBtn = document.getElementById('generateBtn');
+    const copyPromptBtn = document.getElementById('copyPromptBtn');
+    const statusEl = document.getElementById('status');
+    const latencyEl = document.getElementById('latency');
+    const stateEl = document.getElementById('state');
+    const errorEl = document.getElementById('error');
+    const outputEl = document.getElementById('output');
+    const chipButtons = document.querySelectorAll('.chip[data-prompt]');
+
+    const stagedMessages = [
+      'Stage 1: extracting intent...',
+      'Stage 2: designing architecture...',
+      'Stage 3: generating schemas...',
+      'Stage 4: refining consistency...'
+    ];
+
+    let stageTimer = null;
+
+    function startStatusAnimation() {
+      let index = 0;
+      statusEl.textContent = stagedMessages[index];
+      stageTimer = window.setInterval(() => {
+        index = Math.min(index + 1, stagedMessages.length - 1);
+        statusEl.textContent = stagedMessages[index];
+      }, 1400);
+    }
+
+    function stopStatusAnimation() {
+      if (stageTimer) {
+        window.clearInterval(stageTimer);
+        stageTimer = null;
+      }
+    }
+
+    chipButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        promptEl.value = button.getAttribute('data-prompt') || '';
+        promptEl.focus();
+      });
+    });
+
+    copyPromptBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(promptEl.value);
+        stateEl.textContent = 'Prompt copied';
+        statusEl.textContent = 'Prompt copied to clipboard.';
+      } catch (error) {
+        stateEl.textContent = 'Copy failed';
+        statusEl.textContent = error.message || 'Unable to copy prompt.';
+      }
+    });
+
+    generateBtn.addEventListener('click', async () => {
+      const prompt = promptEl.value.trim();
+      generateBtn.disabled = true;
+      copyPromptBtn.disabled = true;
+      errorEl.textContent = 'None';
+      errorEl.classList.remove('error');
+      latencyEl.textContent = '--';
+      stateEl.textContent = 'Running';
+      outputEl.textContent = '{}';
+      startStatusAnimation();
+
+      try {
+        const response = await fetch(`${apiBaseUrl}/generate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ prompt })
+        });
+
+        const data = await response.json();
+        outputEl.textContent = JSON.stringify(data, null, 2);
+
+        if (!response.ok || data.success === false) {
+          const message = data.error || data.details || 'Generation failed.';
+          statusEl.textContent = message;
+          errorEl.textContent = message;
+          errorEl.classList.add('error');
+          stateEl.textContent = 'Failed';
+          return;
+        }
+
+        statusEl.textContent = 'Complete.';
+        latencyEl.textContent = `${data.latencyMs} ms`;
+        stateEl.textContent = 'Ready';
+      } catch (error) {
+        const message = error.message || 'Request failed.';
+        statusEl.textContent = message;
+        errorEl.textContent = message;
+        errorEl.classList.add('error');
+        stateEl.textContent = 'Error';
+        outputEl.textContent = JSON.stringify({ success: false, error: message }, null, 2);
+      } finally {
+        stopStatusAnimation();
+        generateBtn.disabled = false;
+        copyPromptBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
 </html>
