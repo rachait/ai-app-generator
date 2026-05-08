@@ -1,0 +1,117 @@
+{
+  "appName": "Atlas Ops",
+  "defaultLocale": "en",
+  "locales": ["en", "es"],
+  "translations": {
+    "en": {
+      "appName": "Atlas Ops",
+      "signIn": "Sign in",
+      "signOut": "Sign out",
+      "email": "Email",
+      "password": "Password",
+      "dashboard": "Dashboard",
+      "contacts": "Contacts",
+      "tasks": "Tasks",
+      "csvImport": "CSV Import",
+      "notifications": "Notifications",
+      "loading": "Loading...",
+      "error": "Error",
+      "create": "Create",
+      "update": "Update",
+      "delete": "Delete",
+      "save": "Save",
+      "cancel": "Cancel",
+      "import": "Import",
+      "rows": "Rows",
+      "records": "Records",
+      "language": "Language",
+      "activity": "Activity",
+      "ownerScoped": "User-scoped data"
+    },
+    "es": {
+      "appName": "Atlas Ops",
+      "signIn": "Iniciar sesi\u00f3n",
+      "signOut": "Cerrar sesi\u00f3n",
+      "email": "Correo",
+      "password": "Contrase\u00f1a",
+      "dashboard": "Panel",
+      "contacts": "Contactos",
+      "tasks": "Tareas",
+      "csvImport": "Importar CSV",
+      "notifications": "Notificaciones",
+      "loading": "Cargando...",
+      "error": "Error",
+      "create": "Crear",
+      "update": "Actualizar",
+      "delete": "Eliminar",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "import": "Importar",
+      "rows": "Filas",
+      "records": "Registros",
+      "language": "Idioma",
+      "activity": "Actividad",
+      "ownerScoped": "Datos por usuario"
+    }
+  },
+  "navigation": [
+    { "id": "dashboard", "view": "dashboard", "labelKey": "dashboard" },
+    { "id": "contacts", "view": "entity", "entityId": "contacts", "labelKey": "contacts" },
+    { "id": "tasks", "view": "entity", "entityId": "tasks", "labelKey": "tasks" },
+    { "id": "imports", "view": "import", "labelKey": "csvImport" },
+    { "id": "notifications", "view": "notifications", "labelKey": "notifications" }
+  ],
+  "auth": {
+    "roles": ["admin", "member"],
+    "users": [
+      {
+        "id": "user_admin",
+        "email": "admin@atlas.local",
+        "password": "password123",
+        "name": "Admin User",
+        "role": "admin"
+      },
+      {
+        "id": "user_member",
+        "email": "member@atlas.local",
+        "password": "password123",
+        "name": "Member User",
+        "role": "member"
+      }
+    ]
+  },
+  "entities": [
+    {
+      "id": "contacts",
+      "labelKey": "contacts",
+      "scoped": true,
+      "allowCsvImport": true,
+      "fields": [
+        { "name": "name", "labelKey": "contacts", "type": "string", "required": true, "component": "text" },
+        { "name": "email", "labelKey": "email", "type": "string", "required": false, "component": "email" },
+        { "name": "status", "labelKey": "activity", "type": "select", "required": true, "component": "select", "options": ["active", "prospect", "inactive"], "default": "active" },
+        { "name": "notes", "labelKey": "activity", "type": "string", "required": false, "component": "textarea" }
+      ]
+    },
+    {
+      "id": "tasks",
+      "labelKey": "tasks",
+      "scoped": true,
+      "allowCsvImport": true,
+      "fields": [
+        { "name": "title", "labelKey": "tasks", "type": "string", "required": true, "component": "text" },
+        { "name": "priority", "labelKey": "activity", "type": "select", "required": true, "component": "select", "options": ["low", "medium", "high"], "default": "medium" },
+        { "name": "completed", "labelKey": "activity", "type": "boolean", "required": false, "component": "checkbox", "default": false },
+        { "name": "dueDate", "labelKey": "activity", "type": "string", "required": false, "component": "date" }
+      ]
+    }
+  ],
+  "dashboard": {
+    "widgets": [
+      { "type": "metric", "entityId": "contacts", "labelKey": "contacts" },
+      { "type": "metric", "entityId": "tasks", "labelKey": "tasks" },
+      { "type": "activity", "source": "notifications", "labelKey": "activity" },
+      { "type": "unknownWidget", "titleKey": "ownerScoped" }
+    ]
+  }
+}

@@ -1,0 +1,1070 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Atlas Ops Runtime</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #08101d;
+      --bg-2: #0d1626;
+      --panel: rgba(12, 18, 30, 0.84);
+      --panel-2: rgba(16, 24, 38, 0.94);
+      --border: rgba(188, 203, 228, 0.14);
+      --text: #eaf1ff;
+      --muted: #9fb0cb;
+      --accent: #7cd6ff;
+      --accent-2: #82f0c0;
+      --accent-3: #b5a2ff;
+      --danger: #ff8080;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.38);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 10% 10%, rgba(124, 214, 255, 0.18), transparent 24%),
+        radial-gradient(circle at 88% 15%, rgba(181, 162, 255, 0.14), transparent 22%),
+        radial-gradient(circle at 78% 82%, rgba(130, 240, 192, 0.12), transparent 26%),
+        linear-gradient(180deg, var(--bg-2), var(--bg));
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 42px 42px;
+      opacity: 0.35;
+    }
+
+    .shell {
+      width: min(1240px, calc(100% - 24px));
+      margin: 0 auto;
+      padding: 18px 0 40px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: rgba(11, 18, 30, 0.68);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: grid;
+      gap: 4px;
+    }
+
+    .brand strong {
+      font-size: 1.06rem;
+      letter-spacing: 0.02em;
+    }
+
+    .brand span,
+    .hint,
+    .muted {
+      color: var(--muted);
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    select,
+    input,
+    textarea,
+    button {
+      font: inherit;
+    }
+
+    select,
+    input,
+    textarea {
+      border: 1px solid rgba(188, 203, 228, 0.18);
+      background: rgba(5, 10, 18, 0.76);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 11px 12px;
+      outline: none;
+    }
+
+    select:focus,
+    input:focus,
+    textarea:focus {
+      border-color: rgba(124, 214, 255, 0.6);
+      box-shadow: 0 0 0 3px rgba(124, 214, 255, 0.12);
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 11px 16px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 55%, var(--accent-3) 100%);
+      color: #07101a;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      border: 1px solid rgba(188, 203, 228, 0.16);
+    }
+
+    button.ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid rgba(188, 203, 228, 0.12);
+    }
+
+    .banner {
+      margin-bottom: 14px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.035);
+      color: var(--muted);
+      display: none;
+    }
+
+    .banner.visible {
+      display: block;
+    }
+
+    .banner.error {
+      color: #ffb5b5;
+      border-color: rgba(255, 128, 128, 0.3);
+      background: rgba(255, 128, 128, 0.08);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 240px minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .sidebar,
+    .main,
+    .panel,
+    .widget {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .sidebar {
+      padding: 16px;
+      position: sticky;
+      top: 16px;
+    }
+
+    .nav {
+      display: grid;
+      gap: 10px;
+    }
+
+    .nav button {
+      width: 100%;
+      text-align: left;
+      border-radius: 14px;
+      padding: 12px 14px;
+    }
+
+    .nav button.active {
+      background: linear-gradient(135deg, rgba(124, 214, 255, 0.24), rgba(181, 162, 255, 0.2));
+      color: var(--text);
+      border: 1px solid rgba(124, 214, 255, 0.28);
+    }
+
+    .main {
+      padding: 16px;
+      min-height: 70vh;
+    }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .section-title h2,
+    .section-title h3,
+    .section-title h4 {
+      margin: 0;
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .metric {
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(188, 203, 228, 0.12);
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 1.4rem;
+      margin-bottom: 4px;
+      color: var(--accent);
+    }
+
+    .widget {
+      padding: 14px;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border-radius: 16px;
+      border: 1px solid rgba(188, 203, 228, 0.12);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 720px;
+      background: rgba(8, 12, 20, 0.66);
+    }
+
+    th,
+    td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid rgba(188, 203, 228, 0.08);
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .row-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .notifications {
+      display: grid;
+      gap: 10px;
+    }
+
+    .notification {
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(188, 203, 228, 0.12);
+    }
+
+    .loading,
+    .empty,
+    .error-state {
+      padding: 18px;
+      border-radius: 16px;
+      border: 1px dashed rgba(188, 203, 228, 0.2);
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .error-state {
+      color: #ffb5b5;
+      border-color: rgba(255, 128, 128, 0.32);
+      background: rgba(255, 128, 128, 0.08);
+    }
+
+    .login-shell {
+      max-width: 520px;
+      margin: 42px auto 0;
+      padding: 18px;
+      border-radius: 20px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .login-shell h1 {
+      margin: 0 0 8px;
+      font-size: 2rem;
+      letter-spacing: -0.04em;
+    }
+
+    .login-grid {
+      display: grid;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .app-footer {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+      }
+
+      .dashboard-grid,
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <strong id="appName">Atlas Ops</strong>
+        <span id="appSubtitle">Config-driven runtime for incomplete and changing specs</span>
+      </div>
+      <div class="controls">
+        <label class="muted" for="localeSelect" style="font-size:0.9rem;">Language</label>
+        <select id="localeSelect"></select>
+        <button id="logoutBtn" class="secondary" type="button" hidden>Sign out</button>
+      </div>
+    </header>
+
+    <div id="banner" class="banner"></div>
+    <div id="root"></div>
+  </div>
+
+  <script>
+    const state = {
+      config: null,
+      session: null,
+      locale: 'en',
+      view: 'dashboard',
+      entityId: 'contacts',
+      loading: true,
+      error: '',
+      records: {},
+      notifications: [],
+      editingRecordId: null,
+    };
+
+    const rootEl = document.getElementById('root');
+    const bannerEl = document.getElementById('banner');
+    const localeSelect = document.getElementById('localeSelect');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const appNameEl = document.getElementById('appName');
+    const appSubtitleEl = document.getElementById('appSubtitle');
+
+    function apiFetch(url, options = {}) {
+      return fetch(url, {
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(options.headers || {})
+        },
+        ...options
+      }).then(async (response) => {
+        const text = await response.text();
+        let data = {};
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch (_error) {
+          data = { raw: text };
+        }
+
+        if (!response.ok) {
+          const message = data.error || data.details?.join(', ') || `Request failed (${response.status})`;
+          throw new Error(message);
+        }
+
+        return data;
+      });
+    }
+
+    function t(key) {
+      const translations = state.config?.translations?.[state.locale] || {};
+      const fallback = state.config?.translations?.[state.config?.defaultLocale || 'en'] || {};
+      return translations[key] || fallback[key] || key;
+    }
+
+    function setBanner(message, isError = false) {
+      if (!message) {
+        bannerEl.textContent = '';
+        bannerEl.className = 'banner';
+        return;
+      }
+
+      bannerEl.textContent = message;
+      bannerEl.className = `banner visible${isError ? ' error' : ''}`;
+    }
+
+    function setLoading(message) {
+      state.loading = Boolean(message);
+      setBanner(message || '', false);
+    }
+
+    function getEntity(entityId) {
+      return state.config?.entities?.find((entity) => entity.id === entityId) || null;
+    }
+
+    function getNavigation() {
+      return Array.isArray(state.config?.navigation) ? state.config.navigation : [];
+    }
+
+    function fieldValue(record, field) {
+      if (!record) {
+        return '';
+      }
+
+      if (field.component === 'checkbox') {
+        return Boolean(record[field.name]);
+      }
+
+      return record[field.name] ?? field.default ?? '';
+    }
+
+    function renderLoading() {
+      return `<div class="loading">${t('loading')}</div>`;
+    }
+
+    function renderError(message) {
+      return `<div class="error-state">${message || t('error')}</div>`;
+    }
+
+    function renderLogin() {
+      return `
+        <section class="login-shell">
+          <h1>${state.config?.appName || 'Atlas Ops'}</h1>
+          <p class="muted">${state.config?.translations?.[state.locale]?.ownerScoped || 'User-scoped data'}</p>
+          <form id="loginForm" class="login-grid">
+            <label class="field">
+              <span>${t('email')}</span>
+              <input name="email" type="email" value="admin@atlas.local" required />
+            </label>
+            <label class="field">
+              <span>${t('password')}</span>
+              <input name="password" type="password" value="password123" required />
+            </label>
+            <button type="submit">${t('signIn')}</button>
+          </form>
+          <div class="app-footer">
+            Demo users: <strong>admin@atlas.local</strong> / <strong>password123</strong> or <strong>member@atlas.local</strong> / <strong>password123</strong>.
+          </div>
+        </section>
+      `;
+    }
+
+    function renderWidget(widget) {
+      if (!widget || typeof widget !== 'object') {
+        return '<div class="widget">Unknown widget config</div>';
+      }
+
+      if (widget.type === 'metric') {
+        const entity = getEntity(widget.entityId);
+        const count = (state.records[widget.entityId] || []).length;
+        return `
+          <div class="widget metric">
+            <span class="muted">${t(widget.labelKey || entity?.labelKey || widget.entityId || 'records')}</span>
+            <strong>${count}</strong>
+            <div>${t('records')}</div>
+          </div>
+        `;
+      }
+
+      if (widget.type === 'activity') {
+        return `
+          <div class="widget">
+            <h4 style="margin:0 0 10px;">${t(widget.labelKey || 'activity')}</h4>
+            <div class="notifications">
+              ${(state.notifications || []).slice(0, 4).map((note) => `
+                <div class="notification">
+                  <strong>${note.type}</strong>
+                  <div class="muted">${note.message}</div>
+                  <div class="muted" style="font-size:0.82rem;">${new Date(note.createdAt).toLocaleString()}</div>
+                </div>
+              `).join('') || '<div class="empty">No activity yet.</div>'}
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="widget">
+          <h4 style="margin:0 0 8px;">Unsupported widget: ${widget.type}</h4>
+          <div class="muted">This demonstrates the fallback path for unknown config components.</div>
+        </div>
+      `;
+    }
+
+    function renderDashboard() {
+      const widgets = state.config?.dashboard?.widgets || [];
+      return `
+        <section class="stack">
+          <div class="section-title">
+            <div>
+              <h2>${t('dashboard')}</h2>
+              <div class="muted">${state.session?.name || state.session?.email || ''} · ${t('ownerScoped')}</div>
+            </div>
+          </div>
+
+          <div class="dashboard-grid">
+            ${widgets.map(renderWidget).join('')}
+          </div>
+
+          <div class="panel" style="padding:14px;">
+            <div class="section-title">
+              <h3>${t('notifications')}</h3>
+            </div>
+            <div class="notifications">
+              ${(state.notifications || []).slice(0, 5).map((note) => `
+                <div class="notification">
+                  <strong>${note.type}</strong>
+                  <div>${note.message}</div>
+                </div>
+              `).join('') || '<div class="empty">No notifications yet.</div>'}
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderEntityView() {
+      const entity = getEntity(state.entityId);
+      if (!entity) {
+        return renderError(`Unknown entity: ${state.entityId}`);
+      }
+
+      const records = state.records[entity.id] || [];
+      const editing = state.editingRecordId ? records.find((item) => item.id === state.editingRecordId) : null;
+      const fields = entity.fields || [];
+
+      return `
+        <section class="stack">
+          <div class="section-title">
+            <div>
+              <h2>${t(entity.labelKey || entity.id)}</h2>
+              <div class="muted">${entity.scoped ? t('ownerScoped') : 'Shared data'}</div>
+            </div>
+            <button id="refreshEntityBtn" class="secondary" type="button">Refresh</button>
+          </div>
+
+          <div class="panel" style="padding:14px;">
+            <div class="section-title">
+              <h3>${editing ? t('update') : t('create')}</h3>
+              <div class="muted">${entity.allowCsvImport ? t('csvImport') + ' enabled' : ''}</div>
+            </div>
+            <form id="entityForm" class="form-grid">
+              ${fields.map((field) => {
+                const value = fieldValue(editing, field);
+                const isFull = field.component === 'textarea';
+                const baseClass = `field${isFull ? ' full' : ''}`;
+                const label = t(field.labelKey || field.name);
+
+                if (field.component === 'select') {
+                  return `
+                    <label class="${baseClass}">
+                      <span>${label}${field.required ? ' *' : ''}</span>
+                      <select name="${field.name}" ${field.required ? 'required' : ''}>
+                        <option value="">--</option>
+                        ${(field.options || []).map((option) => `<option value="${option}" ${String(value) === option ? 'selected' : ''}>${option}</option>`).join('')}
+                      </select>
+                    </label>
+                  `;
+                }
+
+                if (field.component === 'textarea') {
+                  return `
+                    <label class="${baseClass}">
+                      <span>${label}${field.required ? ' *' : ''}</span>
+                      <textarea name="${field.name}" ${field.required ? 'required' : ''}>${String(value || '')}</textarea>
+                    </label>
+                  `;
+                }
+
+                if (field.component === 'checkbox') {
+                  return `
+                    <label class="${baseClass}">
+                      <span>${label}</span>
+                      <input name="${field.name}" type="checkbox" ${value ? 'checked' : ''} />
+                    </label>
+                  `;
+                }
+
+                const inputType = field.component === 'date' ? 'date' : field.component === 'email' ? 'email' : 'text';
+                return `
+                  <label class="${baseClass}">
+                    <span>${label}${field.required ? ' *' : ''}</span>
+                    <input name="${field.name}" type="${inputType}" value="${String(value || '')}" ${field.required ? 'required' : ''} />
+                  </label>
+                `;
+              }).join('')}
+              <div class="field full" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                <button type="submit">${editing ? t('update') : t('create')}</button>
+                <button id="clearFormBtn" type="button" class="secondary">${t('cancel')}</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="panel" style="padding:14px;">
+            <div class="section-title">
+              <h3>${t('records')}</h3>
+              <div class="muted">${records.length}</div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    ${fields.map((field) => `<th>${t(field.labelKey || field.name)}</th>`).join('')}
+                    <th>Owner</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${records.map((record) => `
+                    <tr>
+                      <td>${record.id}</td>
+                      ${fields.map((field) => `<td>${String(record[field.name] ?? '')}</td>`).join('')}
+                      <td>${record.ownerId || '-'}</td>
+                      <td>
+                        <div class="row-actions">
+                          <button type="button" class="secondary" data-edit-id="${record.id}">Edit</button>
+                          <button type="button" class="ghost" data-delete-id="${record.id}">Delete</button>
+                        </div>
+                      </td>
+                    </tr>
+                  `).join('') || `<tr><td colspan="${fields.length + 3}"><div class="empty">No records yet.</div></td></tr>`}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderImportView() {
+      const entity = getEntity(state.entityId) || getEntity('contacts');
+      return `
+        <section class="stack">
+          <div class="section-title">
+            <div>
+              <h2>${t('csvImport')}</h2>
+              <div class="muted">Upload, map, store, and render - without breaking on imperfect rows.</div>
+            </div>
+          </div>
+
+          <div class="panel" style="padding:14px;">
+            <div class="stack">
+              <div class="muted">Target entity: <strong>${t(entity?.labelKey || entity?.id || 'contacts')}</strong></div>
+              <textarea id="csvInput" placeholder="name,email,status,notes\nAva,ava@example.com,active,First import\nNoah,noah@example.com,prospect,Lead from CSV"></textarea>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                <button id="importBtn" type="button">${t('import')}</button>
+                <button id="showContactsBtn" type="button" class="secondary">Open ${t('contacts')}</button>
+              </div>
+              <div class="hint">Use headers that match entity fields. Extra columns are preserved in an <code>extra</code> object.</div>
+            </div>
+          </div>
+
+          <div class="panel" style="padding:14px;">
+            <div class="section-title"><h3>Import result</h3></div>
+            <pre id="importResult" class="loading" style="white-space:pre-wrap;margin:0;">Awaiting import...</pre>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderNotificationsView() {
+      return `
+        <section class="stack">
+          <div class="section-title">
+            <div>
+              <h2>${t('notifications')}</h2>
+              <div class="muted">Event-based notifications generated on create, update, delete, and import.</div>
+            </div>
+          </div>
+
+          <div class="panel" style="padding:14px;">
+            <div class="notifications">
+              ${(state.notifications || []).map((note) => `
+                <div class="notification">
+                  <strong>${note.type}</strong>
+                  <div>${note.message}</div>
+                  <div class="muted" style="font-size:0.82rem;">${new Date(note.createdAt).toLocaleString()}</div>
+                </div>
+              `).join('') || '<div class="empty">No notifications yet.</div>'}
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderAppShell() {
+      const nav = getNavigation();
+      const currentTitle = nav.find((item) => item.view === state.view && (item.entityId ? item.entityId === state.entityId : true));
+
+      return `
+        <div class="layout">
+          <aside class="sidebar">
+            <div class="section-title" style="margin-bottom:14px;">
+              <h3 style="margin:0;">${t('dashboard')}</h3>
+            </div>
+            <div class="nav">
+              ${nav.map((item) => `
+                <button type="button" class="${item.view === state.view && (item.entityId ? item.entityId === state.entityId : true) ? 'active' : ''}" data-view="${item.view}" data-entity-id="${item.entityId || ''}">
+                  ${t(item.labelKey || item.id)}
+                </button>
+              `).join('')}
+            </div>
+          </aside>
+
+          <main class="main">
+            <div class="section-title">
+              <div>
+                <h2>${currentTitle ? t(currentTitle.labelKey || currentTitle.id) : t('dashboard')}</h2>
+                <div class="muted">${state.session?.name || state.session?.email || ''} · ${state.session?.role || ''}</div>
+              </div>
+            </div>
+            ${state.loading ? renderLoading() : state.view === 'dashboard' ? renderDashboard() : state.view === 'entity' ? renderEntityView() : state.view === 'import' ? renderImportView() : state.view === 'notifications' ? renderNotificationsView() : renderError('Unknown view')}
+          </main>
+        </div>
+      `;
+    }
+
+    function render() {
+      appNameEl.textContent = state.config?.appName || 'Atlas Ops';
+      appSubtitleEl.textContent = state.session ? `${state.session.name} · ${state.session.role}` : 'Config-driven runtime for incomplete and changing specs';
+      logoutBtn.hidden = !state.session;
+      localeSelect.disabled = !state.config;
+      localeSelect.innerHTML = (state.config?.locales || ['en']).map((locale) => `<option value="${locale}" ${locale === state.locale ? 'selected' : ''}>${locale.toUpperCase()}</option>`).join('');
+      rootEl.innerHTML = state.loading && !state.config ? renderLoading() : (state.session ? renderAppShell() : renderLogin());
+      bindEvents();
+    }
+
+    function bindEvents() {
+      const loginForm = document.getElementById('loginForm');
+      if (loginForm) {
+        loginForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const formData = new FormData(loginForm);
+          setBanner('');
+          state.loading = true;
+          render();
+
+          try {
+            const data = await apiFetch('/api/auth/login', {
+              method: 'POST',
+              body: JSON.stringify({
+                email: formData.get('email'),
+                password: formData.get('password')
+              })
+            });
+            state.session = data.user;
+            state.view = 'dashboard';
+            await loadRuntimeData();
+            setBanner(`${data.user.name} signed in.`, false);
+          } catch (error) {
+            setBanner(error.message, true);
+          } finally {
+            state.loading = false;
+            render();
+          }
+        });
+      }
+
+      logoutBtn.onclick = async () => {
+        try {
+          await apiFetch('/api/auth/logout', { method: 'POST' });
+        } catch (_error) {
+          // Ignore logout failures and clear locally.
+        }
+        state.session = null;
+        state.records = {};
+        state.notifications = [];
+        state.editingRecordId = null;
+        setBanner('Signed out.', false);
+        render();
+      };
+
+      localeSelect.onchange = async () => {
+        state.locale = localeSelect.value;
+        render();
+      };
+
+      document.querySelectorAll('[data-view]').forEach((button) => {
+        button.onclick = async () => {
+          state.view = button.getAttribute('data-view');
+          state.entityId = button.getAttribute('data-entity-id') || state.entityId;
+          state.editingRecordId = null;
+          if (state.view === 'entity' || state.view === 'import') {
+            await loadEntityRecords(state.entityId);
+          }
+          await loadNotifications();
+          render();
+        };
+      });
+
+      const refreshEntityBtn = document.getElementById('refreshEntityBtn');
+      if (refreshEntityBtn) {
+        refreshEntityBtn.onclick = async () => {
+          await loadEntityRecords(state.entityId);
+          await loadNotifications();
+          render();
+        };
+      }
+
+      const entityForm = document.getElementById('entityForm');
+      if (entityForm) {
+        entityForm.onsubmit = async (event) => {
+          event.preventDefault();
+          const entity = getEntity(state.entityId);
+          if (!entity) {
+            setBanner(`Unknown entity: ${state.entityId}`, true);
+            return;
+          }
+
+          const formData = new FormData(entityForm);
+          const payload = {};
+          entity.fields.forEach((field) => {
+            if (field.component === 'checkbox') {
+              payload[field.name] = formData.get(field.name) === 'on';
+            } else {
+              payload[field.name] = formData.get(field.name);
+            }
+          });
+
+          state.loading = true;
+          render();
+
+          try {
+            if (state.editingRecordId) {
+              await apiFetch(`/api/data/${entity.id}/${state.editingRecordId}`, {
+                method: 'PATCH',
+                body: JSON.stringify(payload)
+              });
+            } else {
+              await apiFetch(`/api/data/${entity.id}`, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+              });
+            }
+            state.editingRecordId = null;
+            await loadEntityRecords(entity.id);
+            await loadNotifications();
+            setBanner(`${t(entity.labelKey || entity.id)} saved.`, false);
+          } catch (error) {
+            setBanner(error.message, true);
+          } finally {
+            state.loading = false;
+            render();
+          }
+        };
+      }
+
+      const clearFormBtn = document.getElementById('clearFormBtn');
+      if (clearFormBtn) {
+        clearFormBtn.onclick = () => {
+          state.editingRecordId = null;
+          render();
+        };
+      }
+
+      document.querySelectorAll('[data-edit-id]').forEach((button) => {
+        button.onclick = () => {
+          state.editingRecordId = button.getAttribute('data-edit-id');
+          render();
+        };
+      });
+
+      document.querySelectorAll('[data-delete-id]').forEach((button) => {
+        button.onclick = async () => {
+          const entity = getEntity(state.entityId);
+          if (!entity) {
+            return;
+          }
+
+          state.loading = true;
+          render();
+
+          try {
+            await apiFetch(`/api/data/${entity.id}/${button.getAttribute('data-delete-id')}`, { method: 'DELETE' });
+            await loadEntityRecords(entity.id);
+            await loadNotifications();
+            setBanner(`${t(entity.labelKey || entity.id)} deleted.`, false);
+          } catch (error) {
+            setBanner(error.message, true);
+          } finally {
+            state.loading = false;
+            render();
+          }
+        };
+      });
+
+      const importBtn = document.getElementById('importBtn');
+      const csvInput = document.getElementById('csvInput');
+      const importResult = document.getElementById('importResult');
+      const showContactsBtn = document.getElementById('showContactsBtn');
+
+      if (showContactsBtn) {
+        showContactsBtn.onclick = async () => {
+          state.view = 'entity';
+          state.entityId = 'contacts';
+          await loadEntityRecords('contacts');
+          render();
+        };
+      }
+
+      if (importBtn && csvInput && importResult) {
+        importBtn.onclick = async () => {
+          const entity = getEntity(state.entityId) || getEntity('contacts');
+          if (!entity) {
+            importResult.textContent = 'Unknown entity';
+            return;
+          }
+
+          importResult.textContent = 'Importing...';
+          state.loading = true;
+          render();
+
+          try {
+            const data = await apiFetch(`/api/import/${entity.id}`, {
+              method: 'POST',
+              body: JSON.stringify({ csv: csvInput.value })
+            });
+            importResult.textContent = JSON.stringify(data, null, 2);
+            await loadEntityRecords(entity.id);
+            await loadNotifications();
+            setBanner(`${data.importedCount} rows imported into ${entity.id}.`, false);
+          } catch (error) {
+            importResult.textContent = error.message;
+            setBanner(error.message, true);
+          } finally {
+            state.loading = false;
+            render();
+          }
+        };
+      }
+    }
+
+    async function loadEntityRecords(entityId) {
+      if (!entityId) {
+        return;
+      }
+
+      const data = await apiFetch(`/api/data/${entityId}`);
+      state.records[entityId] = data.records || [];
+    }
+
+    async function loadNotifications() {
+      const data = await apiFetch('/api/notifications');
+      state.notifications = data.notifications || [];
+    }
+
+    async function loadRuntimeData() {
+      const entities = state.config?.entities || [];
+      const entityIds = new Set([state.entityId, ...entities.map((entity) => entity.id)]);
+      for (const entityId of entityIds) {
+        if (entityId) {
+          await loadEntityRecords(entityId);
+        }
+      }
+      await loadNotifications();
+    }
+
+    async function bootstrap() {
+      try {
+        state.loading = true;
+        render();
+        state.config = await apiFetch('/api/runtime/config');
+        localeSelect.innerHTML = (state.config.locales || ['en']).map((locale) => `<option value="${locale}">${locale.toUpperCase()}</option>`).join('');
+        state.locale = state.config.defaultLocale || 'en';
+        const sessionData = await apiFetch('/api/auth/session');
+        state.session = sessionData.user || null;
+        if (state.session) {
+          await loadRuntimeData();
+        }
+      } catch (error) {
+        state.error = error.message;
+        setBanner(error.message, true);
+      } finally {
+        state.loading = false;
+        render();
+      }
+    }
+
+    bootstrap();
+  </script>
+</body>
+</html>

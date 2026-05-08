@@ -1,0 +1,19 @@
+{
+  "name": "ai-app-generator",
+  "version": "1.0.0",
+  "description": "AI-powered app generator using Claude API",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node evaluate.js",
+    "evaluate": "node evaluate.js",
+    "metrics": "curl http://localhost:3000/metrics"
+  },
+  "keywords": ["ai", "generator", "claude"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2"
+  }
+}

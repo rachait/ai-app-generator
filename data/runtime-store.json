@@ -1,0 +1,67 @@
+{
+  "records": {
+    "contacts": [
+      {
+        "id": "contacts_3",
+        "ownerId": "user_admin",
+        "createdAt": "2026-05-08T04:00:40.714Z",
+        "updatedAt": "2026-05-08T04:00:40.714Z",
+        "name": "Liam",
+        "email": "liam@example.com",
+        "status": "active",
+        "notes": "CSV row 2",
+        "extra": {}
+      },
+      {
+        "id": "contacts_2",
+        "ownerId": "user_admin",
+        "createdAt": "2026-05-08T04:00:40.713Z",
+        "updatedAt": "2026-05-08T04:00:40.713Z",
+        "name": "Mia",
+        "email": "mia@example.com",
+        "status": "prospect",
+        "notes": "CSV row 1",
+        "extra": {}
+      },
+      {
+        "id": "contacts_1",
+        "ownerId": "user_admin",
+        "createdAt": "2026-05-08T04:00:25.517Z",
+        "updatedAt": "2026-05-08T04:00:25.517Z",
+        "name": "Ava",
+        "email": "ava@example.com",
+        "status": "active",
+        "notes": "First contact",
+        "extra": {}
+      }
+    ],
+    "tasks": []
+  },
+  "notifications": [
+    {
+      "id": "note_5aa3e6a0e27a",
+      "userId": "user_admin",
+      "type": "import",
+      "message": "2 contacts rows imported",
+      "entityId": "contacts",
+      "recordId": null,
+      "createdAt": "2026-05-08T04:00:40.714Z"
+    },
+    {
+      "id": "note_914cf3aa603a",
+      "userId": "user_admin",
+      "type": "create",
+      "message": "contacts record created",
+      "entityId": "contacts",
+      "recordId": "contacts_1",
+      "createdAt": "2026-05-08T04:00:25.517Z"
+    }
+  ],
+  "nextIds": {
+    "contacts": 4
+  },
+  "meta": {
+    "createdAt": "2026-05-08T03:58:53.007Z",
+    "version": 1
+  }
+}
