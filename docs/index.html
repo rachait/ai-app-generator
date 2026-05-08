@@ -462,7 +462,7 @@
           <div class="controls">
             <button id="generateBtn">Generate</button>
             <button id="copyPromptBtn" type="button" style="background: rgba(255,255,255,0.06); color: var(--text); box-shadow: none; border: 1px solid rgba(168,183,214,0.16);">Copy prompt</button>
-            <a href="/app" class="chip" style="text-decoration:none; display:inline-flex; align-items:center;">Open runtime</a>
+            <a id="runtimeLink" href="/app" class="chip" style="text-decoration:none; display:inline-flex; align-items:center;">Open runtime</a>
             <div id="status" class="status">Idle.</div>
           </div>
           <div class="hint">Tip: add a domain, a user role, and one monetization or workflow detail for sharper output.</div>
@@ -516,6 +516,8 @@
     const explicitApiBaseUrl = new URLSearchParams(window.location.search).get('api');
     const storedApiBaseUrl = window.localStorage.getItem('ai-app-generator-api-base-url');
     const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const isGitHubPages = window.location.hostname.endsWith('github.io');
+    const staticDemoMode = isGitHubPages && !explicitApiBaseUrl && !storedApiBaseUrl;
     const apiBaseUrl = explicitApiBaseUrl
       || storedApiBaseUrl
       || (window.location.protocol === 'file:' || isLocalHost ? 'http://localhost:3000' : defaultApiBaseUrl);
@@ -528,7 +530,12 @@
     const stateEl = document.getElementById('state');
     const errorEl = document.getElementById('error');
     const outputEl = document.getElementById('output');
+    const runtimeLinkEl = document.getElementById('runtimeLink');
     const chipButtons = document.querySelectorAll('.chip[data-prompt]');
+
+    if (runtimeLinkEl && (isGitHubPages || window.location.protocol === 'file:')) {
+      runtimeLinkEl.href = './runtime.html';
+    }
 
     const stagedMessages = [
       'Stage 1: extracting intent...',
@@ -650,6 +657,17 @@
       startStatusAnimation();
 
       try {
+        if (staticDemoMode) {
+          const fallback = buildOfflineSpec(prompt, 'Static demo mode on GitHub Pages.');
+          outputEl.textContent = JSON.stringify(fallback, null, 2);
+          statusEl.textContent = 'Complete (static demo mode).';
+          errorEl.textContent = 'None';
+          errorEl.classList.remove('error');
+          stateEl.textContent = 'Ready';
+          latencyEl.textContent = '0 ms';
+          return;
+        }
+
         const data = await fetchJson(`${apiBaseUrl}/generate`, {
           method: 'POST',
           headers: {
@@ -676,7 +694,7 @@
         const message = error.message || 'Request failed.';
         const fallback = buildOfflineSpec(prompt, message);
         statusEl.textContent = 'Backend unavailable, using offline mock.';
-        errorEl.textContent = message;
+        errorEl.textContent = 'None';
         errorEl.classList.remove('error');
         stateEl.textContent = 'Offline demo';
         latencyEl.textContent = '0 ms';
