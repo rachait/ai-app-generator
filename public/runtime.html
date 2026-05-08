@@ -542,7 +542,11 @@
         ]
       },
       nextIds: { contacts: 3, tasks: 2 },
-      notifications: []
+      notifications: [
+        { id: 'n_1', userId: 'u_admin', type: 'create', message: 'Created contact contacts_1', entityId: 'contacts', recordId: 'contacts_1', createdAt: new Date(Date.now() - 3600000).toISOString() },
+        { id: 'n_2', userId: 'u_admin', type: 'create', message: 'Created task tasks_1', entityId: 'tasks', recordId: 'tasks_1', createdAt: new Date(Date.now() - 1800000).toISOString() },
+        { id: 'n_3', userId: 'u_member', type: 'create', message: 'Created contact contacts_2', entityId: 'contacts', recordId: 'contacts_2', createdAt: new Date(Date.now() - 900000).toISOString() }
+      ]
     };
 
     function clone(value) {
